@@ -1,0 +1,53 @@
+name: default
+channels:
+  - conda-forge
+  #- nodefaults
+dependencies:
+  #- cartopy
+  - cdo
+  - cftime
+  - cfunits
+  - dask
+  - fiona
+  - gdal
+  - geopandas
+  - geopy
+  - geos
+  - geotiff
+  #- hdf4
+  #- hdf5
+  - jinja2
+  #- jupyter
+  #- libspatialite
+  - nco
+  - ncview
+  - netcdf4
+  - numexpr
+  - numpy
+  #- pandas
+  - pendulum
+  - pip
+  #- pooch
+  #- proj
+  - pyproj
+  - pyreadr
+  - python-dateutil
+  - python=3.13
+  - pytz
+  #- pyyaml
+  #- rclone
+  - rpy2
+  - rtree
+  #- ruamel_yaml
+  - scipy
+  - setuptools
+  - shapely
+  #- six
+  #- sqlite
+  - tqdm
+  - udunits2
+  - wheel
+  - wrf-python
+  - xarray
+  #- yaml
+prefix: /mnt/scratch_lustre/nhannah/esme_local/env/envs/esme
