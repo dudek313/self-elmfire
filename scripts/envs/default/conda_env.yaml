@@ -49,5 +49,6 @@ dependencies:
   - wheel
   - wrf-python
   - xarray
+  - rioxarray
   #- yaml
 prefix: /mnt/scratch_lustre/nhannah/esme_local/env/envs/esme
