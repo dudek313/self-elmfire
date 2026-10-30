@@ -29,7 +29,9 @@ def test_wrf_crs():
 
         print(crs)
 
-
+def test_declination_tool_with_dem_aspect():
+    path = Path('/mnt/aqf2-scratch1/df-test/efire/data/derived-inputs/dem') / \
+                        'derived-30x30m-EPSG-9473--dems1sv1_0--aspect.tif'
 
 
 test_wrf_crs()

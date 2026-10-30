@@ -34,6 +34,7 @@ class WrfToElmfire:
         self.domains = domains
         self.file_search_pattern = file_search_pattern
 
+
     def do(self):
         
         for dom in self.domains:
@@ -44,7 +45,7 @@ class WrfToElmfire:
     def _read_files(self, paths):
         paths = sorted(paths)
 
-        ws_list, wd_list, t_list, rh_list = [], [], [], []
+        ws_list, wd_list, t2_list, rh_list = [], [], [], []
 
         for i, path in enumerate(paths):
             with nc4.Dataset(path) as ifile:
@@ -52,11 +53,23 @@ class WrfToElmfire:
                     wrf_crs = gt.get_wrf_crs(ifile)
 
                 self._process_file(ifile,
-                                ws_list, wd_list, t_list, rh_list)
+                                ws_list, wd_list, t2_list, rh_list)
 
 
+    def _process_file(self, ifile,
+                      ws_list, wd_list, t2_list, rh_list):
 
+        wspd_wdir10 = wrf.getvar(ifile, "wspd_wdir10", units="m s-1")
+        wspd10_grid = wspd_wdir10[0, :]
+        wdir10_grid = wspd_wdir10[1, :]
 
+        ws_list.append( wspd10_grid )
+        wd_list.append( wdir10_grid )
+
+        t2 = getvar(ncfile, "T2")
+        t2_list.append( t2 )
+
+        rh_list
 
     def _find_files(self, domain:str):
         """
