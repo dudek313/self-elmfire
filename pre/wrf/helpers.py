@@ -1,4 +1,5 @@
 
+import enum
 import numpy as np
 import pyproj as prj
 import netCDF4 as nc4
@@ -8,6 +9,11 @@ from typing import Self
 from pathlib import Path
 from dataclasses import dataclass, field
 
+
+class ProjID(enum.IntEnum):
+    LAMBERT = 1
+    POLAR_STEREOGRAPHIC = 2
+    MERCATOR = 3
 
 WRF_EARTH_RADIUS = 6370000.0
 WRF_SPHERE = f'+a={WRF_EARTH_RADIUS} +b={WRF_EARTH_RADIUS} +units=m +no_defs'
@@ -69,10 +75,10 @@ class WrfDomain:
         sphere = WRF_SPHERE
 
         match proj:
-            case 1:
+            case ProjID.LAMBERT:
                 lat0 = t1
 
-                if hasattr(ifile, 'MyyOAD_CEN_LAT'):
+                if hasattr(ifile, 'MOAD_CEN_LAT'):
                     lat0 = float(ifile.MOAD_CEN_LAT)
                 
                 p4str = f'+proj=lcc +lat_1={t1} +lat_2={t2} +lat_0={lat0} ' + \
@@ -80,7 +86,7 @@ class WrfDomain:
                 
                 return prj.CRS.from_proj4( p4str )
             
-            case 2:
+            case ProjID.POLAR_STEREOGRAPHIC:
                 pole = 90 if t1 >= 0 else -90
                
                 p4str = f'+proj=stere +lat_0={pole} +lat_ts={t1} ' + \
@@ -88,7 +94,7 @@ class WrfDomain:
 
                 return prj.CRS.from_proj4( p4str )
             
-            case 3:
+            case ProjID.MERCATOR:
                 p4str = f'+proj=merc +lat_ts={t1} +lon_0={lon0} {sphere}' 
                 
                 return prj.CRS.from_proj4( p4str )
