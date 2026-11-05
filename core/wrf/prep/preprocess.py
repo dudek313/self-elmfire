@@ -11,7 +11,88 @@ import rioxarray as xrio
 import config as cfg
 import common.geo_tools as gt
 
+import pre.wrf.data_loader as wdl
+
 from pathlib import Path
+
+#
+# type defs
+#
+type DomainID = str
+type WrfFileName = str
+type PerDomainPathList = dict[DomainID, dict[WrfFileName, Path]]
+
+
+class Workflow:
+
+    def __init__(self, per_domain_paths:PerDomainPathList,
+                 start_utc_tstamp:dt.datetime,
+                 end_utc_tstamp:dt.datetime=None,
+                 spinup_hours:int=72):
+        self.per_domain_paths = per_domain_paths
+        self.start_utc_tstamp = start_utc_tstamp
+        self.end_utc_tstamp   = end_utc_tstamp
+        self.spinup_hours     = spinup_hours
+
+
+
+
+
+
+    def _process_domain(self, domain_id:str, paths:list[Path]):
+        
+        ldr = wdl.TimestepIterator(
+                            domain_paths=paths,
+                            start_utc_tstamp=self.start_utc_tstamp,
+                            end_utc_tstamp=self.end_utc_tstamp,
+                            spinup_hours=self.spinup_hours)
+
+
+        for rec in ldr:
+
+            self._process_accummulate_variables(rec)
+
+            if not rec.is_spinup:
+                self._write_variables_to_file(rec)
+
+
+
+
+
+def test():
+
+    wseq = wdl.WrfRunsSequencer(wrf_bpaths)
+
+    paths: PerDomainPathList = wseq.find_file_priority_sequence()
+
+
+
+
+
+
+
+
+class WrfRunAccumulator:
+
+    def __init__(self,
+                 wrf_bpaths: list[Path],
+                 start_date_utc: dt.datetime,
+                 domain_ids:list[str]=cfg.DOMAINS,
+                 file_search_pattern:str=cfg.DOMAIN_FILE_SEARCH_PATTERN):
+        """
+        wrf_bpaths need to be sorted from lowest to highest priority.
+        """
+
+        self.wrf_bpath = wrf_bpath
+        self.domain_ids = domain_ids
+        self.file_search_pattern = file_search_pattern
+
+
+    def do(self):
+        
+        for did in self.domain_ids:
+            paths = self._find_files( did )
+            self._read_files( paths )
 
 
 

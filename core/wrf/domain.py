@@ -4,10 +4,14 @@ import numpy as np
 import pyproj as prj
 import netCDF4 as nc4
 import datetime as dt
+import rasterio as rio
+import rasterio.transform as riot
 
 from typing import Self
 from pathlib import Path
 from dataclasses import dataclass, field
+
+from settings import GTIFF_RIO_CONFIG
 
 
 class ProjID(enum.IntEnum):
@@ -139,4 +143,34 @@ class WrfDomain:
         return WrfDomain(gid, crs, x0, y0, dx, dy, nx, ny)
 
 
+    def get_gtiff_attributes(self, nbands:int,
+                             nodata=-9999.0, predictor=3) -> dict:
+        """
 
+        Notes:
+          * Mass point (i, j) is a cell centre;
+          * Raster row 0 is the northern edge (j = ny - 1).
+
+          * predictor is set to 3 for tiled compression of floating point input
+        """
+
+        transform = riot.from_origin(
+                            self.x0 - self.dx / 2,
+                            self.y0 + (self.ny - 0.5) * self.dy,
+                            self.dx, self.dy
+                        )
+        crs = CRS.from_wkt( self.crs.to_wkt())
+
+        config = dict(
+                width=self.nx,
+                height=self.ny,
+                count=nbands,
+                crs=crs,
+                transform=transform,
+                nodata=-nodata,
+                predictor=predictor
+            )
+
+        config = GTIFF_RIO_CONFIG | config
+
+        return config
