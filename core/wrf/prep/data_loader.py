@@ -12,13 +12,18 @@ import glob
 import numpy as np
 import pyproj as prj
 import netCDF4 as nc4
+import datetime as dt
 import xarray as xr
 import rioxarray as xrio
 
 import config as cfg
+import core.typedef as td
 import common.geo_tools as gt
+import core.wrf.prep.utils as ut
 
 from pathlib import Path
+from dataclasses import dataclass
+
 
 @dataclass
 class IterRecord:
@@ -26,12 +31,13 @@ class IterRecord:
     ts_idx: int
     ifile: nc4.Dataset
     is_spinup: bool
+    total_rec_count: int
 
     @classmethod
     def create(cls, spinup_start, simul_start, 
                ts, ts_idx,
                ifile,
-               total_ts_count):
+               total_rec_count):
 
         assert ts >= spinup_start
         
@@ -41,8 +47,8 @@ class IterRecord:
                 ts=ts,
                 ts_idx=ts_idx,
                 ifile=ifile,
-                is_spinup=is_spinup
-                total_count=total_ts_count
+                is_spinup=is_spinup,
+                total_rec_count=total_rec_count
             )
 
 
@@ -100,15 +106,19 @@ class WrfRunsSequencer:
 class TimestepIterator:
 
     def __init__(self,
-                 domain_paths: list[Path],
+                 domain_paths: td.WrfFileNameToPath,
                  start_utc_tstamp:dt.datetime,
-                 end_utc_date:dt.datetime=None,
+                 end_utc_tstamp:dt.datetime=None,
                  spinup_hours:int=72):
         
 
+        #this is a dict[fname, full file path]
+        #we do this because we want to include paths from multiple runs
+        #so the main sorting is to use the file names and prioritise later
+        #(recent) wrf runs
         self.domain_paths = domain_paths
         self.start_utc_tstamp = start_utc_tstamp
-        self.end_utc_date = end_utc_date
+        self.end_utc_tstamp = end_utc_tstamp
         self.spinup_hours = spinup_hours
 
         self.spinup_start = self.start_utc_tstamp - \
@@ -120,29 +130,36 @@ class TimestepIterator:
         We assume that lexicographical sort of the files results in time
         sort.
         """
-        paths = sorted( self.domain_paths )
+        paths = [ self.domain_paths[fn] 
+                    for fn in sorted( self.domain_paths.keys() ) ]
 
-        total_ts_count = 0
+        total_rec_count = 0
         for i, path in enumerate(paths):
             with nc4.Dataset(path) as ifile:
                 tstamps = self._read_time_stamps(ifile)
+                
+                assert tstamps and len(tstamps) > 0
 
                 if i == 0:
-                    assert ts <= self.spinup_hours
+                    assert tstamps[0] <= self.spinup_start
 
                 for j, ts in enumerate(tstamps):
                     if self.spinup_start > ts:
                         continue
 
-                    total_ts_count += 1
+                    if self.end_utc_tstamp and ts > self.end_utc_tstamp:
+                        break
 
-                    yield IterRecord(
+                    total_rec_count += 1
+
+                    yield IterRecord.create(
                             spinup_start=self.spinup_start,
                             simul_start=self.start_utc_tstamp,
                             ts=ts,
                             ts_idx=j,
                             ifile=ifile,
-                            total_ts_count=total_ts_count)
+                            total_rec_count=total_rec_count)
        
 
-                    
+    def _read_time_stamps(self, ifile):
+        return ut.get_wrf_datetimes(ifile)

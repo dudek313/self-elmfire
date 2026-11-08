@@ -4,7 +4,7 @@ import netCDF4 as nc4
 import pyproj as prj
 import rasterio as rio
 
-
+from pathlib import Path
 
 
 def get_wrf_crs(ncfile_handle:nc4.Dataset):
